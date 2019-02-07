@@ -2,14 +2,15 @@
 /*global define, $, brackets */
 
 
-/* Simple extension which adds "File > Insert HTML Skeleton" and "File > Insert CSS Skeleton" menu items. Haven't yet figured out how to insert text on multiple lines. */
+/* Simple extension which adds "File > Insert HTML Skeleton" and "File > Insert CSS Skeleton" menu items. */
 
 /*********************************************************************************
  *                                                                               *
- * TO DO: Figure out how to make the inserted strings span multiple lines.       *   
- * This extension is quite useless until that works.                             *
+ * TO DO:                                                                        *
  *                                                                               *
- * FUTURE: Set document syntax highlighting to CSS or HTML, accordingly.         *
+ * FUTURE: Set document syntax highlighting to CSS or HTML, accordingly.         * -> currently working on this
+ * FUTURE: Make it so the menu item both creates a new doc and fills it with     *
+ *         the template code.                                                    *
  * FUTURE: Add settings to allow users to individualize their template-skeletons *
  *                                                                               *
  *********************************************************************************/
@@ -18,40 +19,94 @@
 define(function (require, exports, module) {
     "use strict";
 
-    let CommandManager = brackets.getModule("command/CommandManager"),
-        EditorManager  = brackets.getModule("editor/EditorManager"),
-        Menus          = brackets.getModule("command/Menus"),
-        stringHTML     = ["<!DOCTYPE html>", 
-                          "<html lang=\"de\">"], //currently trying to get this to span multiple lines.
-        stringCSS      = "This is where the CSS skeleton is going to be.";   // TODO: Provide actual CSS Skeleton
-        
+    let CommandManager = brackets.getModule("command/CommandManager");
+    let EditorManager  = brackets.getModule("editor/EditorManager");
+    let Menus          = brackets.getModule("command/Menus");
+    let docCounter     = 1;
+    let stringHTML     = "<!DOCTYPE html>\n" +
+                         " \n" +
+                         "<html lang=\"de\">\n" +
+                         "    <head>\n" +
+                         "        <title>Project Title</title>\n" +
+                         " \n" +
+                         "        <meta charset=\"UTF-8\">\n" +
+                         "        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
+                         "        <meta name=\"description\" content=\"Description goes here.\">\n" +
+                         "        <meta name=\"keywords\" content=\"keyword1, keyword2, keyword3\">\n" +
+                         "        <meta name=\"author\" content=\"@Groonworld\">\n" +
+                         "        <meta name=\"copyright\" content=\"@Groonworld\">\n" +
+                         " \n" +
+                         "        <link type=\"text/css\" rel=\"stylesheet\" href=\"style.css\">\n" +
+                         "    </head>\n" +
+                         "    <body>\n" +
+                         "        <div class=\"wrapper-grid\">\n" +
+                         " \n" +
+                         "        </div>\n" +
+                         "    </body>\n" +
+                         "</html>";
+
+    let stringCSS      = "/*===================*/\n" +
+                         "/*    BASIC SETUP    */\n" +
+                         "/*===================*/\n" +
+                         " \n" +
+                         ":root {\n" +
+                         "    --main-color: ##e67e22; // orange\n" +
+                         "    --main-darkshade: #cf6d17; // slightly darker shade of main\n" +
+                         "    --text-color: #555;\n" +
+                         "}\n" +
+                         " \n" +
+                         "* {\n" +
+                         "       margin: 0;\n" +
+                         "       padding: 0;\n" +
+                         "       box-sizing: border-box;\n" +
+                         "}\n" +
+                         " \n" +
+                         " html, body {\n" +
+                         "       background: #fff;\n" +
+                         "       color: var(--text-color);\n" +
+                         "       font-family: 'Lato', 'Arial', sans-serif;\n" +
+                         "       font-weight: 300;\n" +
+                         "       font-size: 20px;\n" +
+                         "       text-rendering: optimizeLegibility;\n" +
+                         "       overflow-x: hidden;\n" +
+                         "}\n" +
+                         " \n" +
+                         "/*===========================*/\n" +
+                         "/*    REUSABLE COMPONENTS    */\n" +
+                         "/*===========================*/\n" +
+                         " \n" +
+                         "/*-----Headings-----*/\n" +
+                         "h1, h2, h3 {\n" +
+                         "    font-weight: 300;\n" +
+                         "    text-transform: uppercase;\n" +
+                         "}\n" +
+                         " \n" +
+                         "h1 {\n" +
+                         "    margin-top: 0;\n" +
+                         "    margin-bottom: 1rem;\n" +
+                         "    color: #fff;\n" +
+                         "    font-size: 2.5rem;\n" +
+                         "    word-spacing: 6px;\n" +
+                         "    letter-spacing: 2px;\n" +
+                         "}\n" +
+                         " \n";                             
+   
     
     // Functions to run when the menu item is clicked
     function insertHTML() {
-        console.log("1. insertHMTL() has been called.")
         let editor = EditorManager.getFocusedEditor();
         if (editor) {
-            let insnPos = {line: 0, ch: 0};
-            
-            console.log("2. " + insPos);
-            console.log("3. " + stringHTML);
-            for (var i = 0; i < stringHTML.length; i++) {
-                console.log("4. i: " + i);
-                insPos.line = i + 5;
-                console.log("5. " + stringHTML[i] + ", Line:" + insPos.line);
-                editor.document.replaceRange(stringHTML[i], insPos, insPos);
-            };
+            editor.document.setText(stringHTML);
         }
     }
     
     function insertCSS() {
         let editor = EditorManager.getFocusedEditor();
         if (editor) {
-            let insPos = {line: 0, ch: 0};
-            editor.document.replaceRange(stringCSS, insPos);
+            editor.document.setText(stringCSS);
         }
     }
-  
+ 
     
     // First, register a command - a UI-less object associating an id to a handler.
     // Use package-style naming to avoid collisions
@@ -64,23 +119,8 @@ define(function (require, exports, module) {
     // Then create  menue items bound to the commands
     // The label of the menu items is the name we gave the command (see above)
     const menu = Menus.getMenu(Menus.AppMenuBar.FILE_MENU);
+    menu.addMenuDivider();
     menu.addMenuItem(COMMAND_ID_HTML);
-    menu.addMenuItem(COMMAND_ID_CSS);
-    
-    // We could also add a key binding at the same time:
-    //menu.addMenuItem(MY_COMMAND_ID, "Ctrl-Alt-W");
-    // (Note: "Ctrl" is automatically mapped to "Cmd" on Mac)
+    menu.addMenuItem(COMMAND_ID_CSS);    
 });
-
-
-
-
-
-
-
-
-
-
-
-
 
